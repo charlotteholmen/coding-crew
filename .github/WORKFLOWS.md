@@ -1,177 +1,154 @@
 # GitHub Actions CI/CD Workflows
 
-This project uses GitHub Actions for continuous integration and testing.
+This project uses GitHub Actions for continuous integration, quality analysis, and Maven Central release automation.
 
 ## Workflows
 
 ### CI Build & Test (`ci.yml`)
 
-Automated build, testing, and reporting pipeline triggered on:
-- Push to `main`, `master`, or `develop` branches
-- Pull requests to `main`, `master`, or `develop` branches
-- Manual trigger via `workflow_dispatch`
+Automated pipeline triggered on:
+- Pushes to `main`
+- Pull requests targeting `main`
+- Manual runs via `workflow_dispatch`
+
+The workflow uses concurrency cancellation so only the latest run per ref keeps executing.
 
 #### Jobs
 
-##### 1. Build & Test (Primary)
-- **JDK**: Java 21 (Temurin distribution)
-- **Build**: Gradle build without tests
-- **Test**: Full test suite including:
-  - JUnit 5 tests
-  - Cucumber BDD tests
-  - Spring Boot integration tests
-- **Reports**: 
-  - JUnit XML reports
-  - HTML test reports
-  - Artifacts retention: 30 days
-- **PR Integration**: Automatic comments on PRs with test summary
+##### 1. Preflight
+- Checks out the repository with full history
+- Sets up Java 21 (Temurin)
+- Validates the Gradle wrapper
 
-**Artifacts Generated:**
-- `test-results/`: Raw JUnit XML results
-- `test-reports/`: HTML formatted test reports
-- `build-logs/`: Build logs on failure (7-day retention)
+##### 2. Build
+- Runs `./gradlew assemble`
+- Uploads build artifacts from both:
+  - `build/`
+  - `codeprompt/build/`
+- Uploads build logs on failure
 
-##### 2. Code Quality Checks
-- Runs Gradle code quality checks
-- Continues on error (non-blocking)
-- Uploads code quality reports
-- Artifacts retention: 30 days
+##### 3. Test & Coverage
+- Runs `./gradlew test jacocoTestReport`
+- Publishes JUnit results from `codeprompt/build/test-results/`
+- Uploads:
+  - `test-results`
+  - `jacoco-report`
+  - `test-reports`
+  - `sonar-inputs`
+- Adds a job summary for the `codeprompt` module
 
-##### 3. Dependency Vulnerability Check
-- Scans dependencies for known vulnerabilities
-- Continues on error (non-blocking)
-- Reports CVEs and security issues
-- Artifacts retention: 30 days
+##### 4. Code Quality Checks
+- Runs `./gradlew check`
+- Uploads reports from root and `codeprompt`
+- Non-blocking on pull requests to keep contributor feedback flowing
 
-## Test Results
+##### 5. SonarQube Analysis
+- Reuses compiled outputs from the test stage when available
+- Falls back to rebuilding `codeprompt` classes if needed
+- Publishes coverage and binary paths for the `codeprompt` module
+- Skips fork PRs because secrets are unavailable there
 
-Test results are published in multiple formats:
+##### 6. Dependency Submission
+- Submits the Gradle dependency graph to GitHub
+- Runs on pushes to `main`
 
-1. **GitHub Check**: Visible in PR checks as "Test Results"
-2. **Artifacts**: Download detailed HTML reports from workflow run
-3. **PR Comments**: Automatic summary posted to pull requests
-4. **Job Summary**: Available in workflow run details
+##### 7. CI Summary
+- Adds a workflow summary to the run
+- Posts a PR comment with per-stage status for internal PRs
 
-## Accessing Reports
+### Release Draft (`release-draft.yml`)
 
-### During Development
-1. Go to the Actions tab in your GitHub repository
-2. Select the workflow run
-3. Download artifacts:
-   - `test-results`: Raw XML results
-   - `test-reports`: HTML formatted reports
-   - `code-quality-reports`: Code analysis results
+Automated release draft workflow triggered on:
+- Pushes to `main`
+- Manual runs via `workflow_dispatch`
 
-### After PR Merge
-- Reports are retained for 30 days
-- Check the workflow history for archived results
+What it does:
+- Resolves the current project version
+- Builds the repository and stages the `codeprompt` Maven publication into `build/staging-deploy/`
+- Creates or refreshes a GitHub release draft through JReleaser
+- Uploads JReleaser logs as workflow artifacts
 
-## Local Testing
+### Release to Maven Central (`release.yml`)
 
-Before pushing, test locally:
+Release workflow triggered on:
+- Push tags matching `v*`
+- Manual runs with a `releaseVersion` input
+
+What it does:
+- Resolves the release version from the tag or workflow input
+- Verifies the build with `clean test`
+- Publishes the staged `codeprompt` module to Maven Central using JReleaser
+- Uploads JReleaser logs as workflow artifacts
+
+## Artifacts
+
+### Main artifacts
+- `build-folder`: assembled outputs from root and `codeprompt`
+- `build-folder-tested`: tested outputs reused by downstream jobs
+- `test-results`: raw JUnit XML from `codeprompt/build/test-results/`
+- `jacoco-report`: JaCoCo XML coverage report from `codeprompt/build/reports/jacoco/test/`
+- `test-reports`: HTML test report from `codeprompt/build/reports/tests/`
+- `code-quality-reports`: Gradle reports from root and `codeprompt`
+- `jreleaser-draft-logs`: release draft logs and generated properties
+- `jreleaser-logs`: release deployment logs and generated properties
+
+### Failure artifacts
+- `build-logs`
+- `test-build-logs`
+
+## Local verification
+
+Before pushing, these are the closest local equivalents to CI:
 
 ```bash
-# Build without tests
-./gradlew build -x test
-
-# Run all tests
-./gradlew test
-
-# Run tests with detailed output
-./gradlew test --stacktrace
-
-# Generate test reports
-./gradlew test --info
-# Reports available in: build/reports/tests/
+./gradlew assemble
+./gradlew test jacocoTestReport
+./gradlew check
 ```
 
-## Test Reporting Features
+For SonarQube analysis, provide the usual Sonar environment variables or Gradle properties before running:
 
-### Cucumber Tests
-- BDD scenarios tracked in Gherkin format
-- Step-by-step execution reports
-- Feature coverage analysis
-
-### JUnit Tests
-- Unit test results
-- Integration test results
-- Test execution time tracking
-
-### HTML Reports
-- Interactive test reports
-- Test class hierarchy
-- Pass/fail statistics
-- Execution timeline
-
-## Configuration
-
-### Gradle Configuration
-The project uses the following test configuration in `build.gradle.kts`:
-
-```kotlin
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
-    
-    testLogging {
-        events("passed", "skipped", "failed", "standardOut", "standardError")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showExceptions = true
-        showCauses = true
-        showStackTraces = true
-    }
-}
+```bash
+./gradlew sonar
 ```
 
-### Dependencies
-- **Test Framework**: JUnit 5.14.2
-- **BDD**: Cucumber 7.34.2
-- **Async Testing**: Awaitility 4.2.2
-- **Spring Boot Test**: Spring Boot 3.4.2
+For release automation smoke tests, the safest local checks are:
+
+```bash
+./gradlew :codeprompt:publishMavenJavaPublicationToStagingRepository --dry-run
+./gradlew jreleaserDeploy --dry-run
+```
+
+## Notes for this repository
+
+- The repository root is a Gradle parent project.
+- The main application code and most CI reports live under the `codeprompt` subproject.
+- Maven Central publishing is staged from `codeprompt`, while JReleaser runs from the repository root and deploys the shared staging directory at `build/staging-deploy/`.
+- Release workflows assume these GitHub Actions secrets are configured: `MODEL_TOKEN`, `SIGNING_KEY`, `SIGNING_PASSWORD`, `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, plus the Sonar secrets used by `ci.yml`.
 
 ## Troubleshooting
 
-### Tests Failing in CI but Passing Locally
-1. Check for environment differences (JDK version, OS)
-2. Review full test logs in artifacts
-3. Check for race conditions or timing issues
+### Test reports are missing
+Check whether the `codeprompt` test task ran and whether files were generated under:
+- `codeprompt/build/test-results/`
+- `codeprompt/build/reports/tests/`
 
-### Missing Test Reports
-1. Verify tests are running (check build logs)
-2. Ensure JUnit XML reports are generated in `build/test-results/`
-3. Check that test classes follow naming convention (`*Test.java` or `*Tests.java`)
+### SonarQube job fails with missing binaries
+The workflow expects compiled classes under `codeprompt/build/classes/`. If artifact reuse fails, the Sonar job rebuilds `:codeprompt:classes` and `:codeprompt:testClasses` as a fallback.
 
-### PR Comments Not Appearing
-1. Verify `GITHUB_TOKEN` has appropriate permissions
-2. Check workflow permissions in repository settings
-3. Review GitHub Actions logs for script errors
+### Release workflow fails before deployment
+Check that:
+- `build/staging-deploy/` contains the staged publication
+- the signing and Maven Central secrets are present
+- the requested release version is semver-compatible
 
-## Security
-
-- All workflows use official GitHub Actions (verified publishers)
-- Dependency checks identify security vulnerabilities
-- Test results do not contain sensitive data (checked before publication)
-- Artifacts are automatically cleaned up after retention period
-
-## Performance
-
-- **Gradle caching** reduces build time
-- **JDK caching** speeds up setup
-- **Parallel test execution** for faster feedback
-- Estimated CI runtime: 5-10 minutes per job
-
-## Contributing
-
-When adding new tests:
-1. Ensure tests follow JUnit 5 conventions
-2. Include descriptive test names
-3. Use Cucumber scenarios for BDD tests
-4. Verify tests pass locally before pushing
-5. Check CI workflow results on PR
+### PR comment not created
+PR comments are skipped for forked pull requests because repository secrets and write permissions are not available.
 
 ## References
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [JUnit 5 Documentation](https://junit.org/junit5/)
-- [Cucumber Documentation](https://cucumber.io/)
 - [Gradle Testing Guide](https://docs.gradle.org/current/userguide/testing.html)
-
+- [JaCoCo Documentation](https://www.jacoco.org/jacoco/)
+- [SonarQube Gradle Scanner](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/sonarscanner-for-gradle/)
+- [JReleaser Documentation](https://jreleaser.org/guide/latest/index.html)

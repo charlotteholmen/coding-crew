@@ -1,37 +1,63 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
+    alias(libs.plugins.springBoot)
+    alias(libs.plugins.springDependencyManagement)
     `java-library`
-    kotlin("jvm") version "2.1.10"
+    alias(libs.plugins.kotlinJvm)
+    id("maven-publish")
+    jacoco
 }
 
-// Override Spring Boot's JUnit version to match Cucumber 7.34.2 requirements
+group = "net.osgiliath.ai"
+description = "Code Prompt Framework: ACP-compatible coding assistant framework powered by LangChain4j"
+version = (findProperty("releaseVersion") as String?) ?: "1.0-SNAPSHOT"
+
 ext {
-    set("junit-jupiter.version", "5.14.2")
-    set("commonmark.version", "0.27.1")
+    set("junit-jupiter.version", libs.versions.junit.get())
+    set("commonmark.version", libs.versions.commonmark.get())
 }
 
-// Explicitly configure Java toolchain for this module to ensure consistency
+
+configure<JacocoPluginExtension> {
+    toolVersion = libs.versions.jacoco.get()
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
-// Configure Kotlin to use the same Java toolchain
-kotlin {
-    jvmToolchain(21)
+
+tasks.withType<Test>().configureEach {
+    // Ensure all test tasks are JUnit Platform based and produce JaCoCo reports.
+    configure<JacocoTaskExtension> {
+        isEnabled = true
+    }
+    finalizedBy(tasks.named("jacocoTestReport"))
+
+    useJUnitPlatform()
+
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+
+    systemProperty("java.util.logging.config.file", "")
 }
 
-// Configure Kotlin compiler options
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
-        // Ensure compatibility with Java-only dependencies
-        freeCompilerArgs.add("-Xjvm-default=all")
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.withType<Test>())
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
     }
 }
 
@@ -41,37 +67,46 @@ springBoot {
 
 configurations.all {
     resolutionStrategy {
-        force("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
-        force("org.jetbrains.kotlin:kotlin-stdlib-common:2.1.10")
-        force("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-        force("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0")
-        // Force JUnit Platform 5.14.2 to match Cucumber 7.34.2 requirements
-        force("org.junit.platform:junit-platform-engine:1.14.2")
-        force("org.junit.platform:junit-platform-commons:1.14.2")
-        force("org.junit.platform:junit-platform-suite:1.14.2")
-        force("org.junit.platform:junit-platform-suite-api:1.14.2")
-        force("org.junit.platform:junit-platform-suite-engine:1.14.2")
-        force("org.junit.platform:junit-platform-launcher:1.14.2")
-        force("org.junit.jupiter:junit-jupiter:5.14.2")
-        force("org.junit.jupiter:junit-jupiter-api:5.14.2")
-        force("org.junit.jupiter:junit-jupiter-engine:5.14.2")
+        val junitVersion = libs.versions.junit.get()
+        val junitPlatformVersion = libs.versions.junitPlatform.get()
+        force(libs.kotlinStdlib)
+        force(libs.kotlinStdlibCommon)
+        force(libs.kotlinxCoroutinesCore)
+        force(libs.kotlinxCoroutinesCoreJvm)
+        force("org.junit.platform:junit-platform-engine:$junitPlatformVersion")
+        force("org.junit.platform:junit-platform-commons:$junitPlatformVersion")
+        force("org.junit.platform:junit-platform-suite:$junitPlatformVersion")
+        force("org.junit.platform:junit-platform-suite-api:$junitPlatformVersion")
+        force("org.junit.platform:junit-platform-suite-engine:$junitPlatformVersion")
+        force("org.junit.platform:junit-platform-launcher:$junitPlatformVersion")
+        force("org.junit.jupiter:junit-jupiter:$junitVersion")
+        force("org.junit.jupiter:junit-jupiter-api:$junitVersion")
+        force("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
     }
 }
 
 dependencies {
-    // ACP LangGraph LangChain Bridge (published to local Maven)
-    implementation("net.osgiliath.ai:acp-langraph-langchain-bridge:1.0.9")
-    // Official ACP Kotlin SDK from JetBrains
-    // Provides built-in protocol handling, STDIO transport, and session management
-    implementation("com.agentclientprotocol:acp:0.15.3")
+    implementation(platform(libs.cucumberBom))
+    implementation(platform(libs.langgraph4jBom))
+    implementation(platform(libs.langchain4jBom))
 
-    // Kotlin stdlib (required by ACP SDK)
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-common:2.1.10")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0")
+    val sdkVersion = (findProperty("sdkVersion") as String?)
+        ?: System.getenv("SDK_VERSION")
+        ?: System.getenv("AGENT_SDK_VERSION")
+        ?: "1.0-SNAPSHOT"
+    val bridgeVersion = (findProperty("bridgeVersion") as String?) ?: System.getenv("BRIDGE_VERSION")
+    ?: libs.versions.bridgeDefault.get()
+    val commonmarkVersion = libs.versions.commonmark.get()
 
-    // LangChain4j Backend (Agent Orchestrator)
+    implementation("net.osgiliath.ai:agent-sdk:$sdkVersion")
+    implementation("net.osgiliath.ai:acp-langraph-langchain-bridge:$bridgeVersion")
+    implementation(libs.acp)
+
+    implementation(libs.kotlinStdlib)
+    implementation(libs.kotlinStdlibCommon)
+    implementation(libs.kotlinxCoroutinesCore)
+    implementation(libs.kotlinxCoroutinesCoreJvm)
+
     implementation("dev.langchain4j:langchain4j")
     implementation("dev.langchain4j:langchain4j-spring-boot-starter")
     implementation("dev.langchain4j:langchain4j-open-ai-spring-boot-starter")
@@ -79,42 +114,33 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-mcp")
     implementation("dev.langchain4j:langchain4j-document-parser-markdown")
 
-    // LangGraph4j (Agent State Management)
     implementation("org.bsc.langgraph4j:langgraph4j-core")
     implementation("org.bsc.langgraph4j:langgraph4j-langchain4j")
 
-    // CommonMark markdown parsing library with extensions
-    implementation("org.commonmark:commonmark:${property("commonmark.version")}")
-    implementation("org.commonmark:commonmark-ext-task-list-items:${property("commonmark.version")}")
-    implementation("org.commonmark:commonmark-ext-yaml-front-matter:${property("commonmark.version")}")
-    implementation("org.commonmark:commonmark-ext-autolink:${property("commonmark.version")}")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:${property("commonmark.version")}")
-    implementation("org.commonmark:commonmark-ext-ins:${property("commonmark.version")}")
+    implementation("org.commonmark:commonmark:$commonmarkVersion")
+    implementation("org.commonmark:commonmark-ext-task-list-items:$commonmarkVersion")
+    implementation("org.commonmark:commonmark-ext-yaml-front-matter:$commonmarkVersion")
+    implementation("org.commonmark:commonmark-ext-autolink:$commonmarkVersion")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:$commonmarkVersion")
+    implementation("org.commonmark:commonmark-ext-ins:$commonmarkVersion")
 
-    // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-json")
     implementation("org.springframework.boot:spring-boot-starter-web")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
-        // Exclude Spring Boot's JUnit Platform version management
         exclude(group = "org.junit.platform")
     }
 
-    // Import JUnit BOM AFTER Spring Boot to override its version management
-    testImplementation(platform("org.junit:junit-bom:5.14.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform(libs.junitBom))
+    testImplementation(libs.junitJupiter)
+    testRuntimeOnly(libs.junitPlatformLauncher)
+    testImplementation(libs.awaitility)
 
-    // Testing utilities
-    testImplementation("org.awaitility:awaitility:4.2.2")
-
-    // Cucumber/Gherkin BDD Testing
     testImplementation("io.cucumber:cucumber-java")
     testImplementation("io.cucumber:cucumber-spring")
     testImplementation("io.cucumber:cucumber-junit-platform-engine")
     testImplementation("org.junit.platform:junit-platform-suite")
-    // testImplementation("org.testcontainers:testcontainers-ollama:2.0.2")
-    // testImplementation("dev.langchain4j:langchain4j-ollama-spring-boot-starter")
     testImplementation("dev.langchain4j:langchain4j-open-ai-official")
 }
 
@@ -124,4 +150,51 @@ tasks.withType<Jar> {
 
 tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun> {
     standardInput = System.`in`
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    // This module is published as a library and should not resolve runtimeClasspath via bootJar in CI.
+    enabled = false
+    classpath = files()
+}
+
+tasks.named<Jar>("jar") {
+    enabled = true
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            pom {
+                name.set("codeprompt")
+                description.set(project.description ?: "Code Prompt Framework")
+                url.set("https://github.com/OsgiliathEnterprise/coding-crew")
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        distribution.set("repo")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("charliemordant")
+                        name.set("Charlie Mordant")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/OsgiliathEnterprise/coding-crew.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/OsgiliathEnterprise/coding-crew.git")
+                    url.set("https://github.com/OsgiliathEnterprise/coding-crew")
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "staging"
+            url = rootProject.layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
+        }
+    }
 }

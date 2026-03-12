@@ -43,3 +43,12 @@ mcp:
     protocol-version: 2024-11-05
     supported-protocol-versions:
       - 2024-11-05
+codeprompt:
+  acp:
+    remote:
+      enabled: true
+      command: ${CODEPROMPT_CAGENT_COMMAND:/usr/local/bin/docker}
+      # Override when your cagent CLI uses a different option shape.
+      args: ${CODEPROMPT_CAGENT_ARGS:agent serve acp src/test/resources/dataset/acp-client/ping-agent.yaml}
+      cwd: ${CODEPROMPT_CAGENT_CWD:.}
+

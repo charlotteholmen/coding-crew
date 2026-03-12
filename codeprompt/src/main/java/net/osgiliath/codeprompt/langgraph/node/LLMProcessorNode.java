@@ -6,11 +6,10 @@ import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.service.TokenStream;
 import net.osgiliath.acplanggraphlangchainbridge.langgraph.message.ResourceLinkContent;
-import net.osgiliath.acplanggraphlangchainbridge.langgraph.state.ChatState;
+import net.osgiliath.acplanggraphlangchainbridge.langgraph.state.AcpState;
 import net.osgiliath.codeprompt.skills.java.JavaSpringBootAssistant;
-import net.osgiliath.codeprompt.langgraph.state.CodingPromptState;
-import net.osgiliath.codeprompt.utils.MimeTypeUtils;
-import net.osgiliath.codeprompt.utils.UnsupportedMimeTypeException;
+import net.osgiliath.agentsdk.utils.MimeTypeUtils;
+import net.osgiliath.agentsdk.utils.UnsupportedMimeTypeException;
 import org.bsc.langgraph4j.action.NodeAction;
 import org.bsc.langgraph4j.langchain4j.generators.StreamingChatGenerator;
 import org.bsc.langgraph4j.prebuilt.MessagesState;
@@ -28,7 +27,7 @@ import java.util.Map;
  * The system prompt, model selection, and HTTP client are all handled by
  * Spring Boot auto-configuration — no manual {@code ChatRequest} assembly.</p>
  *
- * <h3>Streaming bridge</h3>
+ * <h2>Streaming bridge</h2>
  * <p>The {@code @AiService}'s {@link TokenStream} is bridged into LangGraph4j's
  * {@link StreamingChatGenerator} so the graph runtime can iterate over
  * {@link org.bsc.langgraph4j.streaming.StreamingOutput} chunks:</p>
@@ -43,7 +42,7 @@ import java.util.Map;
  * </ol>
  */
 @Component
-public class LLMProcessorNode implements NodeAction<ChatState> {
+public class LLMProcessorNode implements NodeAction<AcpState<ChatMessage>> {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LLMProcessorNode.class);
 
@@ -54,8 +53,11 @@ public class LLMProcessorNode implements NodeAction<ChatState> {
     }
 
     @Override
-    public Map<String, Object> apply(ChatState state) {
-        log.info("CallModel");
+    public Map<String, Object> apply(AcpState<ChatMessage> state) {
+        log.info("CallModel for session {} in cwd {} with {} MCP server(s)",
+                state.sessionId(),
+                state.cwd(),
+                state.mcpServers().size());
 
         var generator = StreamingChatGenerator.<MessagesState<ChatMessage>>builder()
                 .mapResult(response -> Map.of("messages", response.aiMessage()))
@@ -72,15 +74,13 @@ public class LLMProcessorNode implements NodeAction<ChatState> {
                 .map(UserMessage::singleText)
                 .orElse("");
         contents.add(TextContent.from(userMessageText));
-        if (state instanceof CodingPromptState cpState) {
-            List<ResourceLinkContent> meta = cpState.attachmentsMetadata();
-            List<byte[]> data = cpState.attachments();
-            for (int i = 0; i < meta.size(); i++) {
-                try {
-                    contents.add(MimeTypeUtils.toContent(meta.get(i), data.get(i)));
-                } catch (UnsupportedMimeTypeException e) {
-                    log.warn("Failed to process attachment {}: {}", i, e.getMessage());
-                }
+        List<ResourceLinkContent> meta = state.attachmentsMetadata();
+        List<byte[]> data = state.attachments();
+        for (int i = 0; i < meta.size(); i++) {
+            try {
+                contents.add(MimeTypeUtils.toContent(meta.get(i), data.get(i)));
+            } catch (UnsupportedMimeTypeException e) {
+                log.warn("Failed to process attachment {} for session {}: {}", i, state.sessionId(), e.getMessage());
             }
         }
 

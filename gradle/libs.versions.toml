@@ -1,0 +1,41 @@
+[versions]
+springBoot = "3.4.2"
+springDependencyManagement = "1.1.6"
+ideaExt = "1.1.9"
+sonarqube = "7.2.3.7755"
+jreleaser = "1.15.0"
+kotlin = "2.1.10"
+junit = "5.14.2"
+junitPlatform = "1.14.2"
+cucumber = "7.34.2"
+langgraph4j = "1.8.10"
+langchain4j = "1.12.2"
+commonmark = "0.27.1"
+kotlinxCoroutines = "1.9.0"
+awaitility = "4.2.2"
+acp = "0.17.0"
+jacoco = "0.8.12"
+bridgeDefault = "1.0.15"
+
+[libraries]
+junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junitJupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }
+cucumberBom = { module = "io.cucumber:cucumber-bom", version.ref = "cucumber" }
+langgraph4jBom = { module = "org.bsc.langgraph4j:langgraph4j-bom", version.ref = "langgraph4j" }
+langchain4jBom = { module = "dev.langchain4j:langchain4j-bom", version.ref = "langchain4j" }
+acp = { module = "com.agentclientprotocol:acp", version.ref = "acp" }
+kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common", version.ref = "kotlin" }
+kotlinxCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinxCoroutinesCoreJvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinxCoroutines" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+[plugins]
+springBoot = { id = "org.springframework.boot", version.ref = "springBoot" }
+springDependencyManagement = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+ideaExt = { id = "org.jetbrains.gradle.plugin.idea-ext", version.ref = "ideaExt" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+

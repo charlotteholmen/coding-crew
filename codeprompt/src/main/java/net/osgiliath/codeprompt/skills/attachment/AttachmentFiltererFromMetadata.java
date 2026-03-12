@@ -1,15 +1,16 @@
-package net.osgiliath.codeprompt.skills.acp;
+package net.osgiliath.codeprompt.skills.attachment;
 
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 import dev.langchain4j.service.spring.AiService;
 import net.osgiliath.acplanggraphlangchainbridge.langgraph.message.ResourceLinkContent;
+import net.osgiliath.acplanggraphlangchainbridge.langgraph.node.attachment.AttachmentsMetadata;
 
 import java.util.List;
 
 import static dev.langchain4j.service.spring.AiServiceWiringMode.EXPLICIT;
-import static net.osgiliath.codeprompt.configuration.LangChain4jConfig.TOOL_PROVIDER_NONE;
+import static net.osgiliath.agentsdk.configuration.LangChain4jConfig.TOOL_PROVIDER_NONE;
 
 @AiService(wiringMode = EXPLICIT, toolProvider = TOOL_PROVIDER_NONE, chatModel = "primaryChatModel")
 public interface AttachmentFiltererFromMetadata {

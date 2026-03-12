@@ -1,5 +1,8 @@
 acp-langraph-langchain-bridge
+agent-sdk
+agents-common
 build
 .gradle
 .idea
 .env
+.acp-sdk-ref

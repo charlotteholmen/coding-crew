@@ -6,7 +6,7 @@ import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.service.spring.AiService;
 
 import static dev.langchain4j.service.spring.AiServiceWiringMode.EXPLICIT;
-import static net.osgiliath.codeprompt.configuration.LangChain4jConfig.TOOL_PROVIDER_NONE;
+import static net.osgiliath.agentsdk.configuration.LangChain4jConfig.TOOL_PROVIDER_NONE;
 
 /**
  * Simple AI assistant interface powered by LangChain4j.

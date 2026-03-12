@@ -1,17 +1,15 @@
 package net.osgiliath.codeprompt.cucumber.steps;
 
 import com.agentclientprotocol.model.ContentBlock;
-import io.cucumber.java.AfterAll;
 import io.cucumber.java.Before;
-import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import net.osgiliath.acplanggraphlangchainbridge.acp.AcpAgentSupportBridge;
+import net.osgiliath.acplanggraphlangchainbridge.acp.InAcpAdapter;
 import net.osgiliath.codeprompt.skills.java.JavaSpringBootAssistant;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -22,7 +20,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_5_MINI;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -39,7 +36,7 @@ public class AttachmentSupportSteps {
     private JavaSpringBootAssistant javaSpringBootAssistant;
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired(required = false)
-    private AcpAgentSupportBridge acpBridge;
+    private InAcpAdapter acpBridge;
     
     // State variables for testing
     private boolean javaAssistantInitialized = false;
@@ -51,7 +48,7 @@ public class AttachmentSupportSteps {
     private String currentPrompt;
     private List<ContentBlock.ResourceLink> currentResourceLinks;
     private Map<String, Object> graphState;
-    private AcpAgentSupportBridge.AcpSessionBridge currentSession;
+    private InAcpAdapter.AcpSessionBridge currentSession;
     private boolean streamingComplete;
     private List<String> streamedTokens;
 

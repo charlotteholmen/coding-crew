@@ -1,0 +1,66 @@
+Feature: Remote Agent Commands Registration and Reactive Querying in ACP
+
+  Background:
+    Given Codeprompt ACP server is running
+    And a remote agent "ExternalAssistant" is available via ACP
+    And the graph state contains initial context
+
+  @scenario1 @registration
+  Scenario: Sc1 - List of remote agent commands should be registrable in ACP
+    Given a RemoteCommandRegistry is available
+    And the following remote commands are defined:
+      | command_name    | description                    | parameters         | return_type |
+      | analyze-code    | Analyze source code            | code, language     | analysis    |
+      | generate-docs   | Generate documentation         | code, style        | string      |
+      | validate-syntax | Validate code syntax           | code, language     | boolean     |
+      | run-tests       | Execute unit tests             | test_path          | test_result |
+
+    When I register all remote commands with ACP
+    Then the commands are successfully registered
+    And ACP server contains all 4 commands in the registry
+    And each command has the correct metadata (name, description, parameters)
+
+    When the CodingPrompt agent retrieves its info via getAgentInfo()
+    Then the response includes the complete list of registered remote commands
+    And external agents can discover these commands through ACP
+
+  @scenario1 @registration @execution
+  Scenario: Remote command can be executed through graph node
+    Given the remote command "analyze-code" is registered in ACP
+    And the CodingPromptGraph includes a RemoteCommandExecutorNode
+    And the LLM generates a tool call for "analyze-code"
+
+    When the graph processes the LLM response
+    Then the RemoteCommandExecutorNode intercepts the command request
+    And the command is looked up in the RemoteCommandRegistry
+    And the command is executed with the provided parameters
+    And the result is merged back into the graph state
+    And the graph continues execution with the command result
+
+  @scenario1 @registration @validation
+  Scenario: Invalid remote commands are rejected
+    Given the RemoteCommandRegistry is available
+    And I attempt to register a command with missing parameters
+
+    When I try to register an incomplete command
+    Then the registration fails with a validation error
+    And the invalid command is not added to the registry
+    And ACP is not notified of the failed registration
+
+  @scenario2 @reactive-query
+  Scenario: Sc2 - A node should be able to reactively query another agent
+    Given the graph execution is at the "agent" node
+    And the LLM response contains "[QUERY_EXTERNAL]" directive
+    And "ExternalAssistant" agent is available via ACP
+    And ReactiveAgentQueryNode is part of the graph
+
+    When the graph routes to ReactiveAgentQueryNode
+    Then the node builds an AgentQueryRequest from current state
+    And the request is sent to ExternalAssistant via ACP
+    And the graph does not block waiting for the response
+
+    When ExternalAssistant processes the query
+    Then the response is received by ReactiveAgentQueryNode
+    And the response is converted to ChatMessage format
+    And the message is appended to the graph state
+    And the graph resumes execution with the new context

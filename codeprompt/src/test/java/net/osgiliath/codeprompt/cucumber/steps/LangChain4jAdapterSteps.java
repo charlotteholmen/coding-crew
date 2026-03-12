@@ -4,7 +4,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import net.osgiliath.acplanggraphlangchainbridge.acp.AcpAgentSupportBridge;
-import net.osgiliath.acplanggraphlangchainbridge.langgraph.LangGraph4jAdapter;
+import net.osgiliath.acplanggraphlangchainbridge.acp.InAcpAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class LangChain4jAdapterSteps {
     private final AtomicInteger tokenCount = new AtomicInteger(0);
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
-    private LangGraph4jAdapter adapter;
+    private InAcpAdapter adapter;
     private String currentPrompt;
 
     @Given("the CodePrompt application is initialized")
@@ -66,7 +66,10 @@ public class LangChain4jAdapterSteps {
 
     @When("I process the prompt through the adapter")
     public void iProcessThePromptThroughTheAdapter() {
-        adapter.streamPrompt(currentPrompt, Collections.EMPTY_LIST,new AcpAgentSupportBridge.TokenConsumer() {
+        AcpAgentSupportBridge.AcpSessionBridge session =
+            adapter.createSession("langchain4j-cucumber-session", ".", Collections.emptyMap());
+
+        session.streamPrompt(currentPrompt, Collections.emptyList(), new AcpAgentSupportBridge.TokenConsumer() {
             @Override
             public void onNext(String token) {
                 fullResponse.append(token);
@@ -130,5 +133,4 @@ public class LangChain4jAdapterSteps {
         tokenCount.set(0);
     }
 }
-
 

@@ -6,15 +6,13 @@ import net.osgiliath.acplanggraphlangchainbridge.acp.AcpAgentSupportBridge;
 import net.osgiliath.acplanggraphlangchainbridge.langgraph.LangGraph4jAdapter;
 import net.osgiliath.acplanggraphlangchainbridge.langgraph.graph.PromptGraph;
 import net.osgiliath.codeprompt.CodePromptFrameworkApplication;
-import net.osgiliath.codeprompt.utils.markdown.MarkdownParser;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Cucumber Spring configuration that sets up the Spring Boot context for BDD tests.
@@ -44,9 +42,16 @@ public class CucumberSpringConfiguration {
             @Override
             public AcpSessionBridge createSession(String sessionId, String cwd, Map<String, String> mcpServers) {
                 return new AcpSessionBridge() {
+                    private final AtomicBoolean cancelled = new AtomicBoolean(false);
+
                     @Override
                     public String getSessionId() {
                         return sessionId;
+                    }
+
+                    @Override
+                    public AtomicBoolean cancelledFlag() {
+                        return cancelled;
                     }
 
                     @Override
