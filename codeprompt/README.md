@@ -181,7 +181,7 @@ langchain4j:
   open-ai:
     chat-model:
       base-url: https://models.github.ai/inference
-      model-name: gpt-5-nano
+      model-name: gpt-5-mini
 ```
 
 **GitHub Actions automatically:**

@@ -37,7 +37,7 @@ public class GitHubModelConfiguration {
         capabilities.add(RESPONSE_FORMAT_JSON_SCHEMA);
         return OpenAiOfficialChatModel.builder()
                 .baseUrl("https://models.github.ai/inference")
-                .modelName("openai/" + ChatModel.GPT_5_NANO)
+                .modelName("openai/" + ChatModel.GPT_5_MINI)
                 .isGitHubModels(true)
                 .apiKey(System.getenv("MODEL_TOKEN"))
                 .strictJsonSchema(true)
@@ -51,7 +51,7 @@ public class GitHubModelConfiguration {
     public OpenAiOfficialStreamingChatModel streamingModel() {
         return OpenAiOfficialStreamingChatModel.builder()
                 .baseUrl("https://models.github.ai/inference")
-                .modelName("openai/" + ChatModel.GPT_5_NANO)
+                .modelName("openai/" + ChatModel.GPT_5_MINI)
                 .isGitHubModels(true)
                 .apiKey(System.getenv("MODEL_TOKEN"))
                 .strictTools(true)
