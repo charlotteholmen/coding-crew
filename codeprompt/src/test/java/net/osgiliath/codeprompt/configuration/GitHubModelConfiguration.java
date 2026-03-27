@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Configuration for GitHub Models when the 'github' profile is active.
- *
+ * <p>
  * Provides custom OpenAI Official API beans configured for GitHub Models
  * with strict tool support.
  */
@@ -36,31 +36,33 @@ public class GitHubModelConfiguration {
         Set<Capability> capabilities = new HashSet<>();
         capabilities.add(RESPONSE_FORMAT_JSON_SCHEMA);
         return OpenAiOfficialChatModel.builder()
-                .baseUrl("https://models.inference.ai.azure.com")
-                .modelName("openai/"+ChatModel.GPT_5_NANO)
+                .baseUrl("https://models.github.ai/inference")
+                .modelName("openai/" + ChatModel.GPT_5_NANO)
                 .isGitHubModels(true)
                 .apiKey(System.getenv("MODEL_TOKEN"))
                 .strictJsonSchema(true)
                 .supportedCapabilities(capabilities)
-        .strictTools(true)
-        .build();
+                .strictTools(true)
+                .build();
     }
+
     @Bean("primaryStreamingChatModel")
     @Primary
     public OpenAiOfficialStreamingChatModel streamingModel() {
         return OpenAiOfficialStreamingChatModel.builder()
-                .baseUrl("https://models.inference.ai.azure.com")
-                .modelName("openai/"+ChatModel.GPT_5_NANO)
+                .baseUrl("https://models.github.ai/inference")
+                .modelName("openai/" + ChatModel.GPT_5_NANO)
                 .isGitHubModels(true)
                 .apiKey(System.getenv("MODEL_TOKEN"))
-        .strictTools(true)
-        .build();
+                .strictTools(true)
+                .build();
     }
- @Bean(TOOL_PROVIDER_FULL)
+
+    @Bean(TOOL_PROVIDER_FULL)
     public McpToolProvider toolProviderFull() {
         return McpToolProvider.builder()
-        .mcpClients(List.of())
-        .build();
+                .mcpClients(List.of())
+                .build();
     }
 
 
@@ -68,8 +70,8 @@ public class GitHubModelConfiguration {
     @Primary
     public McpToolProvider toolProviderNo() {
         return McpToolProvider.builder()
-        .mcpClients(List.of())
-        .build();
+                .mcpClients(List.of())
+                .build();
     }
 
 }
