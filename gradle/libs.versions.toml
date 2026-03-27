@@ -1,7 +1,7 @@
 [versions]
 springBoot = "3.4.2"
 springDependencyManagement = "1.1.6"
-ideaExt = "1.1.9"
+ideaExt = "1.4.1"
 sonarqube = "7.2.3.7755"
 jreleaser = "1.15.0"
 kotlin = "2.1.10"
