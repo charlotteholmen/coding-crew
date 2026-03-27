@@ -4,7 +4,8 @@ tA minimal **Agent Client Protocol (ACP)** JSON-RPC stdio server with AI integra
 
 ## ⚡ New: Koog Native ACP Support
 
-**Good news!** You can replace the custom JSON-RPC code with Koog's native ACP features, reducing code by 60% and getting better integration.
+**Good news!** You can replace the custom JSON-RPC code with Koog's native ACP features, reducing code by 60% and
+getting better integration.
 
 📖 **[Read the Quick Start Guide](QUICKSTART-KOOG.md)** to migrate to Koog native features.
 
@@ -16,12 +17,12 @@ tA minimal **Agent Client Protocol (ACP)** JSON-RPC stdio server with AI integra
 
 ### Why Migrate to Koog?
 
-| Current (Custom Java) | Koog Native (Kotlin) |
-|----------------------|---------------------|
-| 500 lines of code | 200 lines of code |
-| Manual JSON-RPC | Automatic protocol handling |
-| You maintain | JetBrains maintains |
-| Basic ACP | Full Koog ecosystem |
+| Current (Custom Java) | Koog Native (Kotlin)        |
+|-----------------------|-----------------------------|
+| 500 lines of code     | 200 lines of code           |
+| Manual JSON-RPC       | Automatic protocol handling |
+| You maintain          | JetBrains maintains         |
+| Basic ACP             | Full Koog ecosystem         |
 
 **Java can seamlessly call Kotlin code**, so migration is straightforward!
 
@@ -73,7 +74,6 @@ langchain4j.open-ai.chat-model.model-name=gpt-4o-mini
 langchain4j.open-ai.chat-model.temperature=0.7
 langchain4j.open-ai.chat-model.log-requests=true
 langchain4j.open-ai.chat-model.log-responses=true
-
 # Run LLM demo on startup (optional)
 demo.llm.enabled=false
 ```
@@ -83,6 +83,7 @@ demo.llm.enabled=false
 The `SimpleAssistant` interface is automatically implemented by Spring Boot using LangChain4j:
 
 ```java
+
 @AiService
 public interface SimpleAssistant {
     @SystemMessage("You are a helpful coding assistant specialized in Java, Spring Boot, and enterprise applications.")
@@ -91,6 +92,7 @@ public interface SimpleAssistant {
 ```
 
 The `JsonRpcHandler` automatically uses the AI assistant when:
+
 - The `SimpleAssistant` bean is available (OPENAI_API_KEY is set)
 - A prompt is received via `session/prompt`
 - No template is specified
@@ -118,9 +120,17 @@ Add to `~/.jetbrains/acp.json`:
   "agent_servers": {
     "Code Prompt Framework": {
       "command": "/path/to/gradlew",
-      "args": ["-p", "/path/to/erp", ":codeprompt:bootRun", "-q"],
+      "args": [
+        "-p",
+        "/path/to/erp",
+        ":codeprompt:bootRun",
+        "-q"
+      ],
       "env": [
-        {"name": "OPENAI_API_KEY", "value": "your-key-here"}
+        {
+          "name": "OPENAI_API_KEY",
+          "value": "your-key-here"
+        }
       ]
     }
   }
@@ -170,16 +180,18 @@ CI uses **GitHub Models** via Azure AI:
 langchain4j:
   open-ai:
     chat-model:
-      base-url: https://models.inference.ai.azure.com
-      model-name: gpt-5-nano
+      base-url: https://models.github.ai/inference
+      model-name: gpt-5-mini
 ```
 
 **GitHub Actions automatically:**
+
 - Activates the `github` profile via `SPRING_PROFILES_ACTIVE=github` environment variable
 - Uses the `MODEL_TOKEN` secret for authentication
 - No manual setup required
 
 **To test with GitHub models locally:**
+
 ```bash
 export MODEL_TOKEN=your-github-token
 export SPRING_PROFILES_ACTIVE=github
@@ -190,13 +202,14 @@ export SPRING_PROFILES_ACTIVE=github
 
 The framework uses Spring profiles to switch between configurations:
 
-| Environment | Profile | Provider | Configuration |
-|-------------|---------|----------|---------------|
-| Local tests (default) | none | LM Studio | `application.yaml` |
-| CI/GitHub Actions | `github` | GitHub Models | `application-github.yaml` |
-| Custom | `testcontainers` | Ollama | `application-testcontainers.yaml` |
+| Environment           | Profile          | Provider      | Configuration                     |
+|-----------------------|------------------|---------------|-----------------------------------|
+| Local tests (default) | none             | LM Studio     | `application.yaml`                |
+| CI/GitHub Actions     | `github`         | GitHub Models | `application-github.yaml`         |
+| Custom                | `testcontainers` | Ollama        | `application-testcontainers.yaml` |
 
 **No code changes needed** - just set the profile:
+
 ```bash
 # Local with LM Studio (default)
 ./gradlew test
@@ -222,17 +235,30 @@ For CI to work, ensure the `MODEL_TOKEN` secret is set in your GitHub repository
 ### Initialize Connection
 
 ```json
-{"jsonrpc":"2.0","id":1,"method":"initialize"}
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize"
+}
 ```
 
 **Response:**
+
 ```json
 {
-  "jsonrpc":"2.0",
-  "id":1,
-  "result":{
-    "serverInfo":{"name":"code-prompt-framework","version":"0.1.0"},
-    "capabilities":{"session":{"update":true},"prompt":{}}
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "serverInfo": {
+      "name": "code-prompt-framework",
+      "version": "0.1.0"
+    },
+    "capabilities": {
+      "session": {
+        "update": true
+      },
+      "prompt": {}
+    }
   }
 }
 ```
@@ -240,50 +266,70 @@ For CI to work, ensure the `MODEL_TOKEN` secret is set in your GitHub repository
 ### Create Session
 
 ```json
-{"jsonrpc":"2.0","id":2,"method":"session/new"}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "session/new"
+}
 ```
 
 **Response:**
+
 ```json
-{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"...","text":"Session created"}}
-{"jsonrpc":"2.0","id":2,"result":{"sessionId":"...","createdAt":"2026-02-14T..."}}
+{
+  "jsonrpc": "2.0",
+  "method": "session/update",
+  "params": {
+    "sessionId": "...",
+    "text": "Session created"
+  }
+}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "sessionId": "...",
+    "createdAt": "2026-02-14T..."
+  }
+}
 ```
 
 ### AI-Powered Prompt
 
 ```json
 {
-  "jsonrpc":"2.0",
-  "id":3,
-  "method":"session/prompt",
-  "params":{
-    "sessionId":"abc123",
-    "prompt":"Explain Spring Boot dependency injection"
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "session/prompt",
+  "params": {
+    "sessionId": "abc123",
+    "prompt": "Explain Spring Boot dependency injection"
   }
 }
 ```
 
 **Response** (with AI):
+
 ```json
 {
-  "jsonrpc":"2.0",
-  "method":"session/update",
-  "params":{
-    "sessionId":"abc123",
-    "update":{
-      "sessionUpdate":"agent_message_chunk",
-      "content":{
-        "type":"text",
-        "text":"Spring Boot's dependency injection..."
+  "jsonrpc": "2.0",
+  "method": "session/update",
+  "params": {
+    "sessionId": "abc123",
+    "update": {
+      "sessionUpdate": "agent_message_chunk",
+      "content": {
+        "type": "text",
+        "text": "Spring Boot's dependency injection..."
       }
     }
   }
 }
 {
-  "jsonrpc":"2.0",
-  "id":3,
-  "result":{
-    "stopReason":"end_turn"
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "stopReason": "end_turn"
   }
 }
 ```
@@ -292,37 +338,41 @@ For CI to work, ensure the `MODEL_TOKEN` secret is set in your GitHub repository
 
 ```json
 {
-  "jsonrpc":"2.0",
-  "id":4,
-  "method":"session/prompt",
-  "params":{
-    "template":"Hello {{name}}, welcome to {{place}}!",
-    "variables":{"name":"Ada","place":"Wonderland"}
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "session/prompt",
+  "params": {
+    "template": "Hello {{name}}, welcome to {{place}}!",
+    "variables": {
+      "name": "Ada",
+      "place": "Wonderland"
+    }
   }
 }
 ```
 
 **Response:**
+
 ```json
 {
-  "jsonrpc":"2.0",
-  "method":"session/update",
-  "params":{
-    "sessionId":"...",
-    "update":{
-      "sessionUpdate":"agent_message_chunk",
-      "content":{
-        "type":"text",
-        "text":"Hello Ada, welcome to Wonderland!"
+  "jsonrpc": "2.0",
+  "method": "session/update",
+  "params": {
+    "sessionId": "...",
+    "update": {
+      "sessionUpdate": "agent_message_chunk",
+      "content": {
+        "type": "text",
+        "text": "Hello Ada, welcome to Wonderland!"
       }
     }
   }
 }
 {
-  "jsonrpc":"2.0",
-  "id":4,
-  "result":{
-    "stopReason":"end_turn"
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "stopReason": "end_turn"
   }
 }
 ```
@@ -412,6 +462,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize"}' | ./gradlew :codeprompt:bo
 ### Build Issues
 
 Ensure Java 25 is available:
+
 ```bash
 java -version  # Should show Java 25+
 ```
@@ -425,23 +476,49 @@ Part of the ERP project.
 Initialize:
 
 ```json
-{"jsonrpc":"2.0","id":1,"method":"initialize"}
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize"
+}
 ```
 
 Create session:
 
 ```json
-{"jsonrpc":"2.0","id":2,"method":"session/new"}
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "session/new"
+}
 ```
 
 Prompt (echo):
 
 ```json
-{"jsonrpc":"2.0","id":3,"method":"session/prompt","params":{"sessionId":"SESSION_ID","prompt":"Hello"}}
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "session/prompt",
+  "params": {
+    "sessionId": "SESSION_ID",
+    "prompt": "Hello"
+  }
+}
 ```
 
 Prompt (template):
 
 ```json
-{"jsonrpc":"2.0","id":4,"method":"session/prompt","params":{"template":"Hi {{name}}","variables":{"name":"Ada"}}}
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "session/prompt",
+  "params": {
+    "template": "Hi {{name}}",
+    "variables": {
+      "name": "Ada"
+    }
+  }
+}
 ```

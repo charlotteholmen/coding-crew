@@ -91,7 +91,6 @@ dependencies {
     implementation(platform(libs.langchain4jBom))
 
     val sdkVersion = (findProperty("sdkVersion") as String?)
-        ?: System.getenv("SDK_VERSION")
         ?: System.getenv("AGENT_SDK_VERSION")
         ?: "1.0-SNAPSHOT"
     val bridgeVersion = (findProperty("bridgeVersion") as String?) ?: System.getenv("BRIDGE_VERSION")
