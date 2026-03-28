@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ideaExt)
     id("idea")
     id("base")
+    alias(libs.plugins.dependencycheck)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.jreleaser)
     wrapper

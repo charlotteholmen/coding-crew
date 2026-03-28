@@ -94,7 +94,7 @@ dependencies {
         ?: System.getenv("AGENT_SDK_VERSION")
         ?: "1.0-SNAPSHOT"
     val bridgeVersion = (findProperty("bridgeVersion") as String?) ?: System.getenv("BRIDGE_VERSION")
-    ?: libs.versions.bridgeDefault.get()
+        ?: "1.0-SNAPSHOT"
     val commonmarkVersion = libs.versions.commonmark.get()
 
     implementation("net.osgiliath.ai:agent-sdk:$sdkVersion")

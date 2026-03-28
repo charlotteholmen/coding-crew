@@ -16,8 +16,17 @@ dependencyResolutionManagement {
 
 rootProject.name = "parent"
 
+// Gradle 9.x can fail when writing verification metadata across composite included builds.
+val writingVerificationMetadata = runCatching {
+    val method = gradle.startParameter.javaClass.methods.firstOrNull {
+        it.name == "getWriteDependencyVerifications" && it.parameterCount == 0
+    }
+    val value = method?.invoke(gradle.startParameter)
+    (value as? Collection<*>)?.isNotEmpty() == true
+}.getOrDefault(false)
+
 val bridgeDir = file("acp-langraph-langchain-bridge")
-if (bridgeDir.exists()) {
+if (!writingVerificationMetadata && bridgeDir.exists()) {
     includeBuild(bridgeDir) {
         dependencySubstitution {
             substitute(module("net.osgiliath.ai:acp-langraph-langchain-bridge")).using(project(":"))
@@ -26,7 +35,7 @@ if (bridgeDir.exists()) {
 }
 
 val agentSdkDir = file("agent-sdk")
-if (agentSdkDir.exists()) {
+if (!writingVerificationMetadata && agentSdkDir.exists()) {
     includeBuild(agentSdkDir) {
         dependencySubstitution {
             substitute(module("net.osgiliath.ai:agent-sdk")).using(project(":"))
@@ -35,7 +44,7 @@ if (agentSdkDir.exists()) {
 }
 
 val agentsCommonDir = file("agents-common")
-if (agentsCommonDir.exists()) {
+if (!writingVerificationMetadata && agentsCommonDir.exists()) {
     includeBuild(agentsCommonDir) {
         dependencySubstitution {
             substitute(module("net.osgiliath.ai:agents-common")).using(project(":"))
